@@ -25,7 +25,10 @@ CRGB leds_45mm[N_LED_45mm];
 #define BRIGHTNESS          255
 
 uint8_t gHue = 0; // rotating "base color" used by many of the patterns
-  
+
+byte whichStrip=0;
+byte pixelGap=1;
+
 void setup() {
   Serial.begin(115200);
   Serial << F("Startup.") << endl;
@@ -50,6 +53,10 @@ void setup() {
   FastLED.show();  
   delay(1000);
 
+  fill_solid(leds_30mm, N_LED_30mm, CRGB::Black);
+  fill_solid(leds_45mm, N_LED_45mm, CRGB::Black);
+  FastLED.show();  
+  delay(1000);
 }
 
 void loop() {
@@ -62,12 +69,41 @@ void loop() {
   // do some periodic updates
   EVERY_N_MILLISECONDS( 20 ) { gHue++; } // slowly cycle the "base color" through the rainbow
 
+  // animation
   rainbow();
+
+  // check for inputs
+  if( Serial.available()>0 ) {
+    byte input = Serial.read();
+    switch( input ) {
+      case '1': pixelGap=1; break;
+      case '2': pixelGap=2; break;
+      case '3': pixelGap=3; break;
+      case '4': pixelGap=4; break;
+      case '5': pixelGap=5; break;
+      case '6': pixelGap=6; break;
+      case '7': pixelGap=7; break;
+      case '8': pixelGap=8; break;
+      case '9': pixelGap=9; break;
+      case 'a': whichStrip=0; break;
+      case 'b': whichStrip=1; break;
+      case 'c': whichStrip=2; break;
+      default:
+        Serial << F("Enter [1-9] to set pixel module spacing.  Currently=") << pixelGap << endl;
+        Serial << F("Enter [a-c] to set string usage.  Currently") << whichStrip << endl;
+    }
+  }
 }
 
 void rainbow() 
 {
-  // FastLED's built-in rainbow generator
-  fill_rainbow( leds_30mm, N_LED_30mm, gHue, 7);
-  fill_rainbow( leds_45mm, N_LED_45mm, gHue, 7);
+  // wipe clean
+  fill_solid(leds_45mm, N_LED_45mm, CRGB::Black);
+  fill_solid(leds_30mm, N_LED_30mm, CRGB::Black);
+  
+  if( whichStrip==1 ) { 
+    for(byte i=0; i<N_LED_30mm; i+=pixelGap) leds_30mm[i]=CHSV(gHue, 255, 255);
+  } else if( whichStrip==2 ) {
+    for(byte i=0; i<N_LED_45mm; i+=pixelGap) leds_45mm[i]=CHSV(gHue, 255, 255);
+  }
 }
