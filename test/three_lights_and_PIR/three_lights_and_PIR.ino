@@ -1,6 +1,7 @@
 #include <Streaming.h>
 #include <Metro.h>
 #include <FastLED.h>
+#include <Bounce.h>
 
 FASTLED_USING_NAMESPACE
 
@@ -10,7 +11,6 @@ FASTLED_USING_NAMESPACE
 #define COLOR_ORDER_30mm RGB
 #define N_LED_30mm    14
 CRGB leds_30mm[N_LED_30mm];
-
 
 // 45mm 12V modules
 #define DATA_PIN_45mm    3
@@ -24,14 +24,23 @@ CRGB leds_45mm[N_LED_45mm];
 #define FRAMES_PER_SECOND   20
 #define BRIGHTNESS          255
 
-uint8_t gHue = 0; // rotating "base color" used by many of the patterns
+// rotating "base color" used by many of the patterns
+uint8_t gHue = 0; 
 
+// starting position
 byte whichStrip=0;
 byte pixelGap=1;
+
+// PIR sensor
+#define PIR1_PIN 8
+Bounce pir1 = Bounce(PIR1_PIN, 5);
 
 void setup() {
   Serial.begin(115200);
   Serial << F("Startup.") << endl;
+
+  // need voltage steering
+  pinMode(PIR1_PIN, INPUT_PULLUP);
 
   // tell FastLED about the LED strip configuration
   FastLED.addLeds<LED_TYPE_30mm, DATA_PIN_30mm, COLOR_ORDER_30mm>(leds_30mm, N_LED_30mm).setCorrection(TypicalLEDStrip);
@@ -53,8 +62,7 @@ void setup() {
   FastLED.show();  
   delay(1000);
 
-  fill_solid(leds_30mm, N_LED_30mm, CRGB::Black);
-  fill_solid(leds_45mm, N_LED_45mm, CRGB::Black);
+  blackout();
   FastLED.show();  
   delay(1000);
 }
@@ -93,13 +101,27 @@ void loop() {
         Serial << F("Enter [a-c] to set string usage.  Currently=") << whichStrip << endl;
     }
   }
+
+  // check for people
+  Metro retriggerInterval(2000UL);
+  if( pir1.update() && retriggerInterval.check() && pir1.read()==LOW ) {
+    Serial << F("Trigger!") << endl;
+    blackout();
+    FastLED.show();
+    delay(500);
+  }
+}
+
+void blackout() {
+  // wipe clean
+  fill_solid(leds_45mm, N_LED_45mm, CRGB::Black);
+  fill_solid(leds_30mm, N_LED_30mm, CRGB::Black);
 }
 
 void rainbow() 
 {
-  // wipe clean
-  fill_solid(leds_45mm, N_LED_45mm, CRGB::Black);
-  fill_solid(leds_30mm, N_LED_30mm, CRGB::Black);
+
+  blackout();
   
   if( whichStrip==1 ) { 
     for(byte i=0; i<N_LED_30mm; i+=pixelGap) leds_30mm[i]=CHSV(gHue, 255, 255);
