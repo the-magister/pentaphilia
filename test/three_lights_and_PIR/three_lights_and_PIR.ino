@@ -28,8 +28,8 @@ CRGB leds_45mm[N_LED_45mm];
 uint8_t gHue = 0; 
 
 // starting position
-byte whichStrip=0;
-byte pixelGap=1;
+byte whichStrip=2;
+byte pixelGap=5;
 
 // PIR sensor
 #define PIR1_PIN 8
@@ -103,12 +103,20 @@ void loop() {
   }
 
   // check for people
-  Metro retriggerInterval(2000UL);
-  if( pir1.update() && retriggerInterval.check() && pir1.read()==LOW ) {
-    Serial << F("Trigger!") << endl;
-    blackout();
-    FastLED.show();
-    delay(500);
+  static Metro retriggerInterval(2000UL);
+  if( pir1.update() && pir1.read()==LOW ) {
+    if( retriggerInterval.check() ) {
+      Serial << F("Trigger!") << endl;
+      
+      if( whichStrip==1 ) { 
+        for(byte i=0; i<N_LED_30mm; i+=pixelGap) leds_30mm[i]=CRGB::White;
+      } else if( whichStrip==2 ) {
+        for(byte i=0; i<N_LED_45mm; i+=pixelGap) leds_45mm[i]=CRGB::White;
+      }      
+      FastLED.show();
+      
+      delay(500);
+    }
   }
 }
 
