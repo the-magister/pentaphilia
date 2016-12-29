@@ -41,7 +41,7 @@ FASTLED_USING_NAMESPACE
 #define N_LED_PROJECT       N_CONTROL_PROJECT * N_LED_CONTROL
 
 // top fps possible, by protocol
-float updateTime = N_LED_CONTROL * 30e-6 * 1000.0;
+float theoreticalUpdate = N_LED_CONTROL * 30e-6 * 1000.0;
 float theoreticalFPS = 1.0 / (N_LED_CONTROL * 30e-6);
 
 // that's a big malloc()
@@ -70,35 +70,36 @@ void setup() {
   Serial << F("Byte size of LED container: ") << sizeof(leds) << endl;
 
   Serial << F("LEDs per controller: ") << N_LED_CONTROL << endl;
-  Serial << F("Update time per controller (ms): ") << updateTime << endl;
+  Serial << F("Update time per controller (ms): ") << theoreticalUpdate << endl;
   Serial << F("Theoretical fps: ") << theoreticalFPS << endl;
   
   // tell FastLED about the LED strip configuration
   FastLED.addLeds<PORT, N_CONTROL_PROJECT, COLOR_ORDER>(leds, N_LED_CONTROL).setCorrection(COLOR_CORRECTION);
   // set master brightness control
   FastLED.setBrightness(masterBrightness);
-
+  FastLED.setMaxRefreshRate(100);
+  
   unsigned long tic, toc;
 
   leds.fill_solid(CRGB::Red);
   tic = millis();
   FastLED.show();
   toc = millis();
-  Serial << F("Strip update (ms) actual=") << toc - tic << F(" theoretical=") << updateTime << endl;
+  Serial << F("Strip update (ms) actual=") << toc - tic << F(" theoretical=") << theoreticalUpdate << endl;
   FastLED.delay(1000);
   
   leds.fill_solid(CRGB::Green);
   tic = millis();
   FastLED.show();
   toc = millis();
-  Serial << F("strip update (ms) actual=") << toc - tic << F(" theoretical=") << updateTime<< endl;
+  Serial << F("strip update (ms) actual=") << toc - tic << F(" theoretical=") << theoreticalUpdate<< endl;
   FastLED.delay(1000);
 
   leds.fill_solid(CRGB::Blue);
   tic = millis();
   FastLED.show();
   toc = millis();
-  Serial << F("strip update (ms) actual=") << toc - tic << F(" theoretical=") << updateTime<< endl;
+  Serial << F("strip update (ms) actual=") << toc - tic << F(" theoretical=") << theoreticalUpdate<< endl;
   FastLED.delay(1000);
 
   FastLED.clear();
@@ -110,24 +111,30 @@ void setup() {
 
 void loop() {
   // send the 'leds' array out to the actual LED strip
+  static word updates = 0;
   FastLED.show();  
+  updates++;
 
   // do some periodic updates
   static byte hue = 0;
-  EVERY_N_MILLISECONDS( 20 ) { 
-    // slowly cycle the "base color" through the rainbow
-    hue++; 
-  } 
-
-  // animation
-  leds.fill_rainbow(hue,1);
-    
+//  leds.fill_rainbow(hue++, 1);
+  for(CRGB & pixel : leds) { pixel = CHSV(hue++,240,255); }
+  
   // Show our FPS
   static boolean ledState = false;
-  EVERY_N_SECONDS( 2 ) {
+  word reportInterval = 5;
+  EVERY_N_SECONDS( reportInterval ) {
+    // toggle LED
     ledState = !ledState;
     digitalWrite(ledPin, ledState);
-    Serial << F("FPS actual=") << FastLED.getFPS() << F(" theoretical=") << theoreticalFPS << endl;
+    
+    float reportedFPS = FastLED.getFPS();
+    float actualFPS = (float)updates/(float)reportInterval;
+    updates = 0;   
+    float actualUpdate = 1.0/actualFPS * 1000.0;
+    
+    Serial << F("Metric (actual/theoretical).  FPS, Hz (") << actualFPS << F("/") << theoreticalFPS << F("=") << actualFPS/theoreticalFPS;
+    Serial << F(").  Update, ms (") << actualUpdate << F("/") << theoreticalUpdate << F("=") << actualUpdate/theoreticalUpdate << F(").") << endl;
   }
 }
 
