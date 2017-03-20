@@ -32,7 +32,7 @@ CRGB rnd2[20];
 #define BRIGHTNESS          255
 uint8_t gHue = 0; // rotating "base color" used by many of the patterns
 boolean stripOn[4] = {true, true, true, true};
-byte animation = 0;
+byte animation = 2;
 byte pixelGap = 1;
 const byte LED = 13;
 
