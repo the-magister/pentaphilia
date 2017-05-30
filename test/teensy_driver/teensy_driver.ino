@@ -72,8 +72,15 @@ float theoreticalFPS = 1.0 / (N_LED_CONTROL * 30e-6);
 // that map to physical objects using container classes.
 //
 // See: https://github.com/FastLED/FastLED/wiki/RGBSet-Reference
+// container for all the LEDs, but not very useful in this form
 CRGBArray<N_LED_PROJECT> leds;
 // that's a big malloc()
+// let's make some useful containers that map to the physical layout
+CRGBSet controller0( leds(0*N_LED_CONTROL, 1*N_LED_CONTROL-1) );
+CRGBSet controller1( leds(1*N_LED_CONTROL, 2*N_LED_CONTROL-1) );
+CRGBSet controller2( leds(2*N_LED_CONTROL, 3*N_LED_CONTROL-1) );
+CRGBSet controller3( leds(3*N_LED_CONTROL, 4*N_LED_CONTROL-1) );
+CRGBSet * lFace[] = {&controller0, &controller1, &controller2, &controller3};
 
 // general controls
 byte masterBrightness = 255;
@@ -108,6 +115,8 @@ void setup() {
   // that way, the code will delay() appropriately if computation is fast, and then
   // slow down delays as the code base gets slower, without changing the look of the animations.
   FastLED.setMaxRefreshRate(30);
+  // can define how much power to draw.
+  FastLED.setMaxPowerInVoltsAndMilliamps(12, 10UL * 1000UL); // V, mA
   
   unsigned long tic, toc;
 
