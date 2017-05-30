@@ -22,20 +22,37 @@ FASTLED_USING_NAMESPACE
  * our fps jumps to 26.9 with a 37.2 ms update time.
  * Ergo, the updates are every ~27 ms, which should look "smooth enough".
  * 
- * But, if we go up to 2 strands/DP or 4 strands/dp, we'll need 4 or 8 controllers.
- * Let's plan for 8 controllers (worst-case).
+ * But, if we go up to 2 strands/DP or 4 strands/dp, we'll need 4 or 8 or 16 controllers.
+ * Let's plan for 16 controllers (worst-case).
  */
 
 // See examples/ParallelOutputDemo for parallel output setup
 // Note that the OctoWS2811 library can be added for (reported) speedups,
 //   but I couldn't get a responsive uC after trying that.  YMMV.
 // Pin layouts on the teensy 3/3.1:
-// WS2811_PORTD: 2,14,7,8,6,20,21,5 // 8 lines
-#define PORT WS2811_PORTD // makes 8 strips available, easily
+// WS2811_PORTD: 2,14,7,8,6,20,21,5
+// WS2811_PORTC: 15,22,23,9,10,13,11,12,28,27,29,30 (these last 4 are pads on the bottom of the teensy)
+// WS2811_PORTDC: 2,14,7,8,6,20,21,5,15,22,23,9,10,13,11,12 - 16 way parallel
+#define PORT WS2811_PORTDC // makes 16 controllers available, easily
+// MGD: note, I only wired up 2,14,7,8 to a voltage shifter
 
-#define N_CONTROL_PROJECT   8   // 8 controllers
-#define N_STRIP_CONTROL     62  // 62 gaps to light per controller
-#define N_LED_STRIP         20  // 20 led modules per strip
+/*
+ * Simplest way to wire these up would be for each controller (N=4) to be assigned one face of a P:
+ * 
+ *  /-C0              /-C2        
+ * | =============   | =============    <- looking down (plan view) on DP0
+ *  \          C1-\  \           C3-\ 
+ *  /-C0           |  /-C2           |
+ * | ============= | | ============= |  <- looking down (plan view) on DP1
+ * |           C1-/  |           C3-/
+ * |              |  |              |
+ * 
+ *             ...etc....
+ */
+
+#define N_CONTROL_PROJECT   4   // controller count
+#define N_STRIP_CONTROL     25  // 25 P's per controller
+#define N_LED_STRIP         20  // 20 led modules per P
 // and derive
 #define N_LED_CONTROL       N_STRIP_CONTROL * N_LED_STRIP
 #define N_LED_PROJECT       N_CONTROL_PROJECT * N_LED_CONTROL
@@ -44,9 +61,19 @@ FASTLED_USING_NAMESPACE
 float theoreticalUpdate = N_LED_CONTROL * 30e-6 * 1000.0;
 float theoreticalFPS = 1.0 / (N_LED_CONTROL * 30e-6);
 
-// that's a big malloc()
+/* 
+ * if you had 125 DPs, and 4x 20 LED strips per DP, you'd have 10,000 LEDS.
+ * with 16 controllers, that's 625 LED/controller.
+ * 1/(625*30e-6) = 53 fps.  
+ *
+ */
+ 
+// going to follow the CRGBSet development docs to get abstracted sections of the led array
+// that map to physical objects using container classes.
+//
 // See: https://github.com/FastLED/FastLED/wiki/RGBSet-Reference
 CRGBArray<N_LED_PROJECT> leds;
+// that's a big malloc()
 
 // general controls
 byte masterBrightness = 255;
@@ -77,7 +104,10 @@ void setup() {
   FastLED.addLeds<PORT, N_CONTROL_PROJECT, COLOR_ORDER>(leds, N_LED_CONTROL).setCorrection(COLOR_CORRECTION);
   // set master brightness control
   FastLED.setBrightness(masterBrightness);
-  FastLED.setMaxRefreshRate(100);
+  // should probably set this to a ceiling that you want that's below the theoretic limit.
+  // that way, the code will delay() appropriately if computation is fast, and then
+  // slow down delays as the code base gets slower, without changing the look of the animations.
+  FastLED.setMaxRefreshRate(30);
   
   unsigned long tic, toc;
 
