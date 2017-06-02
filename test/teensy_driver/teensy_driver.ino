@@ -1,8 +1,8 @@
 // compilation settings
 // Board: Teensy 3.2
 // Compiler options: 
-//   Fast=20 fps  (tested Faster=19 fps. Smallest Code=19 fps)
-//   CPU Speed: 120 MHz (overclock)
+//   Optimize: "Fastest" =20 fps  (tested Faster=19 fps. Smallest Code=19 fps)
+//   CPU Speed: 16 MHz
 
 #include <Streaming.h>
 
@@ -157,12 +157,13 @@ void loop() {
   // do some periodic updates
   static byte hue = 0;
 //  leds.fill_rainbow(hue++, 1);
-  for(CRGB & pixel : leds) { pixel = CHSV(hue++,240,255); }
+  for(CRGB & pixel : leds) { pixel = CHSV(hue,240,255); }
   
   // Show our FPS
   static boolean ledState = false;
   word reportInterval = 5;
   EVERY_N_SECONDS( reportInterval ) {
+    hue++;
     // toggle LED
     ledState = !ledState;
     digitalWrite(ledPin, ledState);

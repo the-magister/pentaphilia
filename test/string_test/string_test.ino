@@ -1,9 +1,13 @@
 // Use if you want to force the software SPI subsystem to be used for some reason (generally, you don't)
-// #define FASTLED_FORCE_SOFTWARE_SPI
+//#define FASTLED_FORCE_SOFTWARE_SPI
 // Use if you want to force non-accelerated pin access (hint: you really don't, it breaks lots of things)
-// #define FASTLED_FORCE_SOFTWARE_SPI
-// #define FASTLED_FORCE_SOFTWARE_PINS
+//#define FASTLED_FORCE_SOFTWARE_PINS
+#define FASTLED_ALLOW_INTERRUPTS 0
+#define FASTLED_INTERRUPT_RETRY_COUNT 0
+
 #include "FastLED.h"
+FASTLED_USING_NAMESPACE
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -15,7 +19,7 @@
 #define NUM_LEDS 20
 
 // Data pin that led data will be written out over
-#define DATA_PIN 7
+#define DATA_PIN 2
 
 // Clock pin only needed for SPI based chipsets when not using hardware SPI
 //#define CLOCK_PIN 8
@@ -28,11 +32,18 @@ void setup() {
 	// sanity check delay - allows reprogramming if accidently blowing power w/leds
    	delay(2000);
 
+  Serial.begin(115200);
+  
+
       // Uncomment one of the following lines for your leds arrangement.
       // FastLED.addLeds<TM1803, DATA_PIN, RGB>(leds, NUM_LEDS);
       // FastLED.addLeds<TM1804, DATA_PIN, RGB>(leds, NUM_LEDS);
       // FastLED.addLeds<TM1809, DATA_PIN, RGB>(leds, NUM_LEDS);
-      FastLED.addLeds<WS2811, DATA_PIN, RGB>(leds, NUM_LEDS);
+//      FastLED.addLeds<WS2811, DATA_PIN, RGB>(leds, NUM_LEDS);
+      FastLED.addLeds<WS2811_400, DATA_PIN, RGB>(leds, NUM_LEDS);
+//      FastLED.addLeds<WS2811, DATA_PIN, RGB, DATA_RATE_KHZ(800)>(leds, NUM_LEDS);
+//      FastLED.addLeds<WS2811Controller800Khz, DATA_PIN, RGB>(leds, NUM_LEDS);
+//      FastLED.addLeds<WS2811_PORTD, 1, RGB>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
       // FastLED.addLeds<WS2812, DATA_PIN, RGB>(leds, NUM_LEDS);
       // FastLED.addLeds<WS2812B, DATA_PIN, RGB>(leds, NUM_LEDS);
       // FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
@@ -57,7 +68,9 @@ void setup() {
       // FastLED.addLeds<APA102, DATA_PIN, CLOCK_PIN, RGB>(leds, NUM_LEDS);
       // FastLED.addLeds<DOTSTAR, DATA_PIN, CLOCK_PIN, RGB>(leds, NUM_LEDS);
 
-  Serial.begin(115200);
+  FastLED.setBrightness(16);
+//  FastLED.setMaxRefreshRate(800000UL);
+
 }
 
 // This function runs over and over, and is where you do the magic to light
