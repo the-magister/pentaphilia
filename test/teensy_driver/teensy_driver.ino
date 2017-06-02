@@ -33,7 +33,7 @@ FASTLED_USING_NAMESPACE
 // WS2811_PORTD: 2,14,7,8,6,20,21,5
 // WS2811_PORTC: 15,22,23,9,10,13,11,12,28,27,29,30 (these last 4 are pads on the bottom of the teensy)
 // WS2811_PORTDC: 2,14,7,8,6,20,21,5,15,22,23,9,10,13,11,12 - 16 way parallel
-#define PORT WS2811_PORTDC // makes 16 controllers available, easily
+#define PORT WS2811_PORTD // makes 16 controllers available, easily
 // MGD: note, I only wired up 2,14,7,8 to a voltage shifter
 
 /*
@@ -83,7 +83,7 @@ CRGBSet controller3( leds(3*N_LED_CONTROL, 4*N_LED_CONTROL-1) );
 CRGBSet * lFace[] = {&controller0, &controller1, &controller2, &controller3};
 
 // general controls
-byte masterBrightness = 255;
+byte masterBrightness = 16;
 #define COLOR_ORDER RGB
 #define COLOR_CORRECTION TypicalLEDStrip
 
