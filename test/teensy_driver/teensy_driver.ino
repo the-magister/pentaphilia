@@ -151,13 +151,15 @@ void setup() {
 void loop() {
   // send the 'leds' array out to the actual LED strip
   static word updates = 0;
-  FastLED.show();  
+  FastLED.show();  // will simply call FastLED.delay() if it's too soon to show by
+                   // fps.  _very_ desireable, as the software-level dithering is 
+                   // called so we get smooth colors at low duty.
   updates++;
 
   // do some periodic updates
   static byte hue = 0;
-//  leds.fill_rainbow(hue++, 1);
-  for(CRGB & pixel : leds) { pixel = CHSV(hue,240,255); }
+  leds.fill_rainbow(hue++, 1);
+//  for(CRGB & pixel : leds) { pixel = CHSV(hue,240,255); }
   
   // Show our FPS
   static boolean ledState = false;

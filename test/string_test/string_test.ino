@@ -39,8 +39,8 @@ void setup() {
       // FastLED.addLeds<TM1803, DATA_PIN, RGB>(leds, NUM_LEDS);
       // FastLED.addLeds<TM1804, DATA_PIN, RGB>(leds, NUM_LEDS);
       // FastLED.addLeds<TM1809, DATA_PIN, RGB>(leds, NUM_LEDS);
-//      FastLED.addLeds<WS2811, DATA_PIN, RGB>(leds, NUM_LEDS);
-      FastLED.addLeds<WS2811_400, DATA_PIN, RGB>(leds, NUM_LEDS);
+      FastLED.addLeds<WS2811, DATA_PIN, RGB>(leds, NUM_LEDS);
+//      FastLED.addLeds<WS2811_400, DATA_PIN, RGB>(leds, NUM_LEDS);
 //      FastLED.addLeds<WS2811, DATA_PIN, RGB, DATA_RATE_KHZ(800)>(leds, NUM_LEDS);
 //      FastLED.addLeds<WS2811Controller800Khz, DATA_PIN, RGB>(leds, NUM_LEDS);
 //      FastLED.addLeds<WS2811_PORTD, 1, RGB>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
