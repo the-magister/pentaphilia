@@ -1,8 +1,8 @@
 // compilation settings
 // Board: Teensy 3.2
 // Compiler options: 
-//   Optimize: "Fastest" =20 fps  (tested Faster=19 fps. Smallest Code=19 fps)
-//   CPU Speed: 16 MHz
+//   Optimize: "Faster"
+//   CPU Speed: 96 MHz (Overclock)
 
 #include <Streaming.h>
 
@@ -33,7 +33,7 @@ FASTLED_USING_NAMESPACE
 // WS2811_PORTD: 2,14,7,8,6,20,21,5
 // WS2811_PORTC: 15,22,23,9,10,13,11,12,28,27,29,30 (these last 4 are pads on the bottom of the teensy)
 // WS2811_PORTDC: 2,14,7,8,6,20,21,5,15,22,23,9,10,13,11,12 - 16 way parallel
-#define PORT WS2811_PORTD // makes 16 controllers available, easily
+#define PORT WS2811_PORTDC // makes 16 controllers available, easily
 // MGD: note, I only wired up 2,14,7,8 to a voltage shifter
 
 /*
@@ -81,13 +81,20 @@ CRGBSet controller1( leds(1*N_LED_CONTROL, 2*N_LED_CONTROL-1) );
 CRGBSet controller2( leds(2*N_LED_CONTROL, 3*N_LED_CONTROL-1) );
 CRGBSet controller3( leds(3*N_LED_CONTROL, 4*N_LED_CONTROL-1) );
 CRGBSet * lFace[] = {&controller0, &controller1, &controller2, &controller3};
+// etc.
+// my advice, basically, is to create a CRGBSet that eases implementation of
+// each animation you want to run (aka "sugar").  
 
 // general controls
-byte masterBrightness = 16;
+byte masterBrightness = 255;
 #define COLOR_ORDER RGB
 #define COLOR_CORRECTION TypicalLEDStrip
 
-const int ledPin = 13;
+const unsigned long powerSupplyAmps = 10UL; // 10A supply on the control rig
+
+const byte targetFPS = 50; // frames per scond, Hertz.  
+
+const int ledPin = 13; // useful for showing what's going on
 
 void setup() {
   // initialize the digital pin as an output.
@@ -114,9 +121,9 @@ void setup() {
   // should probably set this to a ceiling that you want that's below the theoretic limit.
   // that way, the code will delay() appropriately if computation is fast, and then
   // slow down delays as the code base gets slower, without changing the look of the animations.
-  FastLED.setMaxRefreshRate(30);
-  // can define how much power to draw.
-  FastLED.setMaxPowerInVoltsAndMilliamps(12, 10UL * 1000UL); // V, mA
+  FastLED.setMaxRefreshRate(targetFPS);
+  // can define how much power to draw.  Set for 10A power supply
+  FastLED.setMaxPowerInVoltsAndMilliamps(12, powerSupplyAmps * 1000UL); // V, mA
   
   unsigned long tic, toc;
 
@@ -158,9 +165,17 @@ void loop() {
 
   // do some periodic updates
   static byte hue = 0;
-  leds.fill_rainbow(hue++, 1);
-//  for(CRGB & pixel : leds) { pixel = CHSV(hue,240,255); }
-  
+
+  // for example, set C0 and C1 to cycle through the rainbow, so one side of the DP is the same
+  controller0.fill_rainbow(hue, 1);
+  controller1 = controller0;
+
+  // and invert the colors on the other side of the DP
+  controller2.fill_rainbow(hue+128, -1);
+  controller3 = controller2;
+
+  // bump the hue up
+  hue++;
   // Show our FPS
   static boolean ledState = false;
   word reportInterval = 5;
