@@ -76,21 +76,65 @@ float theoreticalFPS = 1.0 / (N_LED_CONTROL * 30e-6);
 CRGBArray<N_LED_PROJECT> leds;
 // that's a big malloc()
 // let's make some useful containers that map to the physical layout
-CRGBSet controller0( leds(0*N_LED_CONTROL, 1*N_LED_CONTROL-1) );
-CRGBSet controller1( leds(1*N_LED_CONTROL, 2*N_LED_CONTROL-1) );
-CRGBSet controller2( leds(2*N_LED_CONTROL, 3*N_LED_CONTROL-1) );
-CRGBSet controller3( leds(3*N_LED_CONTROL, 4*N_LED_CONTROL-1) );
-CRGBSet * lFace[] = {&controller0, &controller1, &controller2, &controller3};
-// etc.
+CRGBSet C0( leds(0*N_LED_CONTROL, 1*N_LED_CONTROL-1) );
+CRGBSet C0r = C0( C0.size()-1, 0 ); // reversed version.  other forms of "reverse" defined in pixelsets.h are garbage and don't work well.  YMMV.
+CRGBSet C1( leds(1*N_LED_CONTROL, 2*N_LED_CONTROL-1) );
+CRGBSet C1r = C1( C1.size()-1, 0 );
+CRGBSet C2( leds(2*N_LED_CONTROL, 3*N_LED_CONTROL-1) );
+CRGBSet C2r = C2( C2.size()-1, 0 );
+CRGBSet C3( leds(3*N_LED_CONTROL, 4*N_LED_CONTROL-1) );
+CRGBSet C3r = C3( C3.size()-1, 0 );
+// etc.  these are used in showPalleteBackground().
+
 // my advice, basically, is to create a CRGBSet that eases implementation of
 // each animation you want to run (aka "sugar").  
+
+// the first face, using C0 and C2, accessing C2 in reverse so acessing an led gets the "opposite" side of the clock
+CRGBSet Face0d[2] = { C0( 0*N_LED_STRIP, 1*N_LED_STRIP-1 ), C2( 1*N_LED_STRIP-1, 0*N_LED_STRIP ) };
+// I could keep defining these...
+CRGBSet Face1f[2] = { C0( 1*N_LED_STRIP, 2*N_LED_STRIP-1 ), C2( 2*N_LED_STRIP-1, 1*N_LED_STRIP ) };
+// ...etc....
+// backside of the first face,
+CRGBSet Face0b[2] = { C1( 0*N_LED_STRIP, 1*N_LED_STRIP-1 ), C3( 1*N_LED_STRIP-1, 0*N_LED_STRIP ) };
+// ...etc...
+
+// Or I could "go for the throat".  This is used in showTracerBore() and showPalleteRainbow().
+#define N_FACE_DP 2
+#define N_P_DP 2
+CRGBSet Face[N_STRIP_CONTROL][N_FACE_DP][N_P_DP] = {
+  { { C0( 0 *N_LED_STRIP, 1 *N_LED_STRIP-1 ), C2( 1 *N_LED_STRIP-1, 0 *N_LED_STRIP ) }, { C1( 0 *N_LED_STRIP, 1 *N_LED_STRIP-1 ), C2( 1 *N_LED_STRIP-1, 0 *N_LED_STRIP ) } },
+  { { C0( 1 *N_LED_STRIP, 2 *N_LED_STRIP-1 ), C2( 2 *N_LED_STRIP-1, 1 *N_LED_STRIP ) }, { C1( 1 *N_LED_STRIP, 2 *N_LED_STRIP-1 ), C3( 2 *N_LED_STRIP-1, 1 *N_LED_STRIP ) } },
+  { { C0( 2 *N_LED_STRIP, 3 *N_LED_STRIP-1 ), C2( 3 *N_LED_STRIP-1, 2 *N_LED_STRIP ) }, { C1( 2 *N_LED_STRIP, 3 *N_LED_STRIP-1 ), C3( 3 *N_LED_STRIP-1, 2 *N_LED_STRIP ) } },
+  { { C0( 3 *N_LED_STRIP, 4 *N_LED_STRIP-1 ), C2( 4 *N_LED_STRIP-1, 3 *N_LED_STRIP ) }, { C1( 3 *N_LED_STRIP, 4 *N_LED_STRIP-1 ), C3( 4 *N_LED_STRIP-1, 3 *N_LED_STRIP ) } },
+  { { C0( 4 *N_LED_STRIP, 5 *N_LED_STRIP-1 ), C2( 5 *N_LED_STRIP-1, 4 *N_LED_STRIP ) }, { C1( 4 *N_LED_STRIP, 5 *N_LED_STRIP-1 ), C3( 5 *N_LED_STRIP-1, 4 *N_LED_STRIP ) } },
+  { { C0( 5 *N_LED_STRIP, 6 *N_LED_STRIP-1 ), C2( 6 *N_LED_STRIP-1, 5 *N_LED_STRIP ) }, { C1( 5 *N_LED_STRIP, 6 *N_LED_STRIP-1 ), C3( 6 *N_LED_STRIP-1, 5 *N_LED_STRIP ) } },
+  { { C0( 6 *N_LED_STRIP, 7 *N_LED_STRIP-1 ), C2( 7 *N_LED_STRIP-1, 6 *N_LED_STRIP ) }, { C1( 6 *N_LED_STRIP, 7 *N_LED_STRIP-1 ), C3( 7 *N_LED_STRIP-1, 6 *N_LED_STRIP ) } },
+  { { C0( 7 *N_LED_STRIP, 8 *N_LED_STRIP-1 ), C2( 8 *N_LED_STRIP-1, 7 *N_LED_STRIP ) }, { C1( 7 *N_LED_STRIP, 8 *N_LED_STRIP-1 ), C3( 8 *N_LED_STRIP-1, 7 *N_LED_STRIP ) } },
+  { { C0( 8 *N_LED_STRIP, 9 *N_LED_STRIP-1 ), C2( 9 *N_LED_STRIP-1, 8 *N_LED_STRIP ) }, { C1( 8 *N_LED_STRIP, 9 *N_LED_STRIP-1 ), C3( 9 *N_LED_STRIP-1, 8 *N_LED_STRIP ) } },
+  { { C0( 9 *N_LED_STRIP, 10*N_LED_STRIP-1 ), C2( 10*N_LED_STRIP-1, 9 *N_LED_STRIP ) }, { C1( 9 *N_LED_STRIP, 10*N_LED_STRIP-1 ), C3( 10*N_LED_STRIP-1, 9 *N_LED_STRIP ) } },
+  { { C0( 10*N_LED_STRIP, 11*N_LED_STRIP-1 ), C2( 11*N_LED_STRIP-1, 10*N_LED_STRIP ) }, { C1( 10*N_LED_STRIP, 11*N_LED_STRIP-1 ), C3( 11*N_LED_STRIP-1, 10*N_LED_STRIP ) } },
+  { { C0( 11*N_LED_STRIP, 12*N_LED_STRIP-1 ), C2( 12*N_LED_STRIP-1, 11*N_LED_STRIP ) }, { C1( 11*N_LED_STRIP, 12*N_LED_STRIP-1 ), C3( 12*N_LED_STRIP-1, 11*N_LED_STRIP ) } },
+  { { C0( 12*N_LED_STRIP, 13*N_LED_STRIP-1 ), C2( 13*N_LED_STRIP-1, 12*N_LED_STRIP ) }, { C1( 12*N_LED_STRIP, 13*N_LED_STRIP-1 ), C3( 13*N_LED_STRIP-1, 12*N_LED_STRIP ) } },
+  { { C0( 13*N_LED_STRIP, 14*N_LED_STRIP-1 ), C2( 14*N_LED_STRIP-1, 13*N_LED_STRIP ) }, { C1( 13*N_LED_STRIP, 14*N_LED_STRIP-1 ), C3( 14*N_LED_STRIP-1, 13*N_LED_STRIP ) } },
+  { { C0( 14*N_LED_STRIP, 15*N_LED_STRIP-1 ), C2( 15*N_LED_STRIP-1, 14*N_LED_STRIP ) }, { C1( 14*N_LED_STRIP, 15*N_LED_STRIP-1 ), C3( 15*N_LED_STRIP-1, 14*N_LED_STRIP ) } },
+  { { C0( 15*N_LED_STRIP, 16*N_LED_STRIP-1 ), C2( 16*N_LED_STRIP-1, 15*N_LED_STRIP ) }, { C1( 15*N_LED_STRIP, 16*N_LED_STRIP-1 ), C3( 16*N_LED_STRIP-1, 15*N_LED_STRIP ) } },
+  { { C0( 16*N_LED_STRIP, 17*N_LED_STRIP-1 ), C2( 17*N_LED_STRIP-1, 16*N_LED_STRIP ) }, { C1( 16*N_LED_STRIP, 17*N_LED_STRIP-1 ), C3( 17*N_LED_STRIP-1, 16*N_LED_STRIP ) } },
+  { { C0( 17*N_LED_STRIP, 18*N_LED_STRIP-1 ), C2( 18*N_LED_STRIP-1, 17*N_LED_STRIP ) }, { C1( 17*N_LED_STRIP, 18*N_LED_STRIP-1 ), C3( 18*N_LED_STRIP-1, 17*N_LED_STRIP ) } },
+  { { C0( 18*N_LED_STRIP, 19*N_LED_STRIP-1 ), C2( 19*N_LED_STRIP-1, 18*N_LED_STRIP ) }, { C1( 18*N_LED_STRIP, 19*N_LED_STRIP-1 ), C3( 19*N_LED_STRIP-1, 18*N_LED_STRIP ) } },
+  { { C0( 19*N_LED_STRIP, 20*N_LED_STRIP-1 ), C2( 20*N_LED_STRIP-1, 19*N_LED_STRIP ) }, { C1( 19*N_LED_STRIP, 20*N_LED_STRIP-1 ), C3( 20*N_LED_STRIP-1, 19*N_LED_STRIP ) } },
+  { { C0( 20*N_LED_STRIP, 21*N_LED_STRIP-1 ), C2( 21*N_LED_STRIP-1, 20*N_LED_STRIP ) }, { C1( 20*N_LED_STRIP, 21*N_LED_STRIP-1 ), C3( 21*N_LED_STRIP-1, 20*N_LED_STRIP ) } },
+  { { C0( 21*N_LED_STRIP, 22*N_LED_STRIP-1 ), C2( 22*N_LED_STRIP-1, 21*N_LED_STRIP ) }, { C1( 21*N_LED_STRIP, 22*N_LED_STRIP-1 ), C3( 22*N_LED_STRIP-1, 21*N_LED_STRIP ) } },
+  { { C0( 22*N_LED_STRIP, 23*N_LED_STRIP-1 ), C2( 23*N_LED_STRIP-1, 22*N_LED_STRIP ) }, { C1( 22*N_LED_STRIP, 23*N_LED_STRIP-1 ), C3( 23*N_LED_STRIP-1, 22*N_LED_STRIP ) } },
+  { { C0( 23*N_LED_STRIP, 24*N_LED_STRIP-1 ), C2( 24*N_LED_STRIP-1, 23*N_LED_STRIP ) }, { C1( 23*N_LED_STRIP, 24*N_LED_STRIP-1 ), C3( 24*N_LED_STRIP-1, 23*N_LED_STRIP ) } },
+  { { C0( 24*N_LED_STRIP, 25*N_LED_STRIP-1 ), C2( 25*N_LED_STRIP-1, 24*N_LED_STRIP ) }, { C1( 24*N_LED_STRIP, 25*N_LED_STRIP-1 ), C3( 25*N_LED_STRIP-1, 24*N_LED_STRIP ) } }
+};
 
 // general controls
 byte masterBrightness = 255;
 #define COLOR_ORDER RGB
 #define COLOR_CORRECTION TypicalLEDStrip
 
-const unsigned long powerSupplyAmps = 10UL; // 10A supply on the control rig
+//const unsigned long powerSupplyAmps = 10UL; // 10A supply on the control rig
 
 const byte targetFPS = 50; // frames per scond, Hertz.  
 
@@ -123,7 +167,7 @@ void setup() {
   // slow down delays as the code base gets slower, without changing the look of the animations.
   FastLED.setMaxRefreshRate(targetFPS);
   // can define how much power to draw.  Set for 10A power supply
-  FastLED.setMaxPowerInVoltsAndMilliamps(12, powerSupplyAmps * 1000UL); // V, mA
+//  FastLED.setMaxPowerInVoltsAndMilliamps(12, powerSupplyAmps * 1000UL); // V, mA
   
   unsigned long tic, toc;
 
@@ -163,24 +207,23 @@ void loop() {
                    // called so we get smooth colors at low duty.
   updates++;
 
-  // do some periodic updates
-  static byte hue = 0;
+  // do some updates to the background.  
+  // this will light all of the LEDs at brightness with a pallette wash.
+  static CRGBPalette16 palette = PartyColors_p;
+  byte bright = 128;
+  showPalleteBackground(palette, bright);
 
-  // for example, set C0 and C1 to cycle through the rainbow, so one side of the DP is the same
-  controller0.fill_rainbow(hue, 1);
-  controller1 = controller0;
+  // send tracers down the bore
+  byte tracerSaturation = 128;
+  byte tracerBrightness = 255;
+  CHSV tracerColor = CHSV(HUE_BLUE, tracerSaturation, tracerBrightness);
+  byte tracerCount = 3;
+  showTracerBore(tracerCount, tracerColor);
 
-  // and invert the colors on the other side of the DP
-  controller2.fill_rainbow(hue+128, -1);
-  controller3 = controller2;
-
-  // bump the hue up
-  hue++;
   // Show our FPS
   static boolean ledState = false;
   word reportInterval = 5;
   EVERY_N_SECONDS( reportInterval ) {
-    hue++;
     // toggle LED
     ledState = !ledState;
     digitalWrite(ledPin, ledState);
@@ -192,6 +235,77 @@ void loop() {
     
     Serial << F("Metric (actual/theoretical).  FPS, Hz (") << actualFPS << F("/") << theoreticalFPS << F("=") << actualFPS/theoreticalFPS;
     Serial << F(").  Update, ms (") << actualUpdate << F("/") << theoreticalUpdate << F("=") << actualUpdate/theoreticalUpdate << F(").") << endl;
+  }
+}
+
+void showPalleteBackground(CRGBPalette16 palette, byte bright) {
+  // do some periodic updates
+  static byte indexStart = 0;
+
+  // apply the pallette to the first face
+  for( byte i=0; i<N_LED_STRIP; i++ ) {
+    Face[0][0][0][i] = ColorFromPalette(palette, indexStart+i, bright);
+    Face[0][1][0][i] = Face[0][0][0][i]; // back the same as front
+    // invert the color progression on the other side of the DP
+    Face[0][0][1][i] = ColorFromPalette(palette, indexStart+128-i, bright);
+    Face[0][1][1][i] = Face[0][0][1][i]; // back the same as front
+    // replicate
+    for( byte j=1; j<N_STRIP_CONTROL; j++ ) {
+      Face[j][0][0][i] = Face[0][0][0][i];
+      Face[j][0][1][i] = Face[0][1][0][i];
+      Face[j][1][0][i] = Face[1][0][0][i];
+      Face[j][1][1][i] = Face[1][1][0][i];
+    }
+  }
+
+  /*
+  C0.fill_rainbow(hue, hueDelta);
+  C0.fadeToBlackBy(fadeBy);
+  C1 = C0;
+
+  // and invert the colors on the other side of the DP
+  C2.fill_rainbow(hue+128, -hueDelta);
+  C2.fadeToBlackBy(fadeBy);
+  C3 = C2;
+  */
+  
+  // bump the index up
+  indexStart++;
+}
+
+void showTracerBore(byte tracerCount, CHSV tracerColor) {
+
+  const byte nMax = 50;
+  if( tracerCount > nMax) { Serial << F("showTracerBore. tracerCount>nMax. halting.") << endl; while(1); }
+
+  static int tracerPos[nMax];
+  static int tracerDir[nMax];
+  static byte tracerSide[nMax];
+
+  static byte inStartup = true;
+  if( inStartup ) {
+    // set all of the active tracers to "at the end", so we bootstrap correctly.
+    for(byte i=0; i<tracerCount; i++) {
+      tracerDir[i] = +1;
+      tracerPos[i] = N_STRIP_CONTROL;
+      tracerSide[i] = 0;
+    }
+    inStartup = false;
+  }
+
+  for( byte i=0; i<tracerCount; i++ ) {
+    // step
+    tracerPos[i] += tracerDir[i];
+    // are we OOB?
+    if( tracerPos[i] < 0 || tracerPos[i] > N_STRIP_CONTROL-1 ) {
+      // need a new tracer
+      tracerPos[i] = random8(0, N_STRIP_CONTROL);
+      tracerDir[i] = random8()>128 ? 1 : -1;
+      tracerSide[i] = random8(0, N_P_DP);
+    }
+    // paint
+    Face[tracerPos[i]][0][tracerSide[i]] = tracerColor;
+    Face[tracerPos[i]][1][tracerSide[i]] = tracerColor;
   }
 }
 
